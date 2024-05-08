@@ -43,4 +43,4 @@ Notes from the [Advanced NLP with Spacy](https://course.spacy.io/en) course
                 matched_span = doc[start:end]
                 print(matched_span.text)
         ```
-      - {"OP": "!"} - negation: match 0 times, "?" - 0 or 1 time, "+" - 1 or more times, "*" = 0 or more times
+      - ```{"OP": "!"}``` - negation: match 0 times, ```"?"``` - 0 or 1 time, ```"+"``` - 1 or more times, ```"*"``` = 0 or more times
