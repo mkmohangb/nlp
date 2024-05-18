@@ -1,1 +1,1 @@
-### Fine-tune GLiNER NER model
+Fine-tune GLiNER model
