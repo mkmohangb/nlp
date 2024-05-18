@@ -48,34 +48,50 @@ def load_conll2003_dataset():
 
     return train_json, val_json, test_json
 
-def load_model():
-    model = GLiNER.from_pretrained("urchade/gliner_small")
+def load_model(size):
+    model = GLiNER.from_pretrained(f"urchade/gliner_{size}")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
     return model
 
 if __name__ == "__main__":
+    import sys
+    action = sys.argv[1]
+    size = sys.argv[2]
     train_json, val_json, test_json = load_conll2003_dataset()
     print(len(train_json))
     print(len(val_json))
     print(len(test_json))
-    model = load_model()
-    eval_data = {
-    "entity_types": ["Person", 'Location', 'Organization', 'Miscellaneous'],
-    "samples": val_json
-    }
-    trainer = GlinerTrainer(model, 
-                        train_data = train_json,
-                        batch_size = 4,
-                        grad_accum_every = 16,
-                        lr_encoder = 1e-5,
-                        lr_others = 5e-5, 
-                        freeze_token_rep = False, 
-                        val_every_step = 1000, 
-                        val_data = eval_data,
-                        checkpoint_every_epoch = 15, # Or checkpoint_every_step if you use steps
-                        max_types=25,
-              )
+    if action == "train":
+        model = load_model(size)
+        eval_data = {
+        "entity_types": ["Person", 'Location', 'Organization', 'Miscellaneous'],
+        "samples": val_json
+        }
+        trainer = GlinerTrainer(model,
+                            train_data = train_json,
+                            batch_size = 4,
+                            grad_accum_every = 16,
+                            lr_encoder = 1e-5,
+                            lr_others = 5e-5,
+                            freeze_token_rep = False,
+                            val_every_step = 1000,
+                            val_data = eval_data,
+                            checkpoint_every_epoch = 15, # Or checkpoint_every_step if you use steps
+                            max_types=25,
+                )
 
 
-    trainer.train(num_epochs=1)
+        trainer.train(num_epochs=10)
+        trainer.model.save_pretrained(size, repo_id=f"usernameandme/gliner-{size}", push_to_hub=True)
+    else:
+        print(len(test_json))
+        eval_data = {
+        "entity_types": ["Person", 'Location', 'Organization', 'Miscellaneous'],
+        "samples": test_json
+        }
+        model = GLiNER.from_pretrained(size, local_files_only=True)
+        results, f1 = model.evaluate(eval_data["samples"], flat_ner=True, threshold=0.5,
+                                                        batch_size=12,
+                                                        entity_types=eval_data["entity_types"])
+        print(f"{results}")
